@@ -2,24 +2,13 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"golang.org/x/time/rate"
 	"homework/api/global"
 	"homework/api/internal/middleware"
 	"homework/api/internal/service"
 )
 
 func InitRouter() {
-	limiter := rate.NewLimiter(10, 1)
 	r := gin.Default()
-	r.Use(middleware.CORS(), middleware.LimitRate(limiter))
-	r.LoadHTMLGlob("templates/*")
-	{
-		r.GET("/404", templates.No)
-		r.GET("/register", templates.Register)
-		r.GET("/login", templates.LogIn)
-		r.GET("/info", templates.Info)
-		r.GET("/product", templates.Product)
-	}
 
 	r.POST("/register", service.Register)
 	r.POST("/login", service.LogIn)
