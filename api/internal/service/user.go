@@ -8,6 +8,7 @@ import (
 	"homework/api/internal/middleware"
 	"homework/model"
 	"homework/utils"
+	"net/http"
 	"strconv"
 )
 
@@ -20,39 +21,39 @@ func Register(c *gin.Context) {
 	}
 
 	if user.Username == "" || user.Password == "" {
-		c.JSON(500, gin.H{
-			"code": 0,
-			"msg":  "用户名或密码为空",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "username or password are empty",
 		})
 		return
 	}
 	if len(user.Phone) != 11 {
-		c.JSON(500, gin.H{
-			"code": 0,
-			"msg":  "手机号不合法",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "numbers are failed",
 		})
 		return
 	}
 
 	_, err = dao.GetUserByUsername(user.Username)
 	if err != gorm.ErrRecordNotFound {
-		c.JSON(500, gin.H{
-			"code": 0,
-			"msg":  "用户已存在",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "user already exists",
 		})
 		return
 	}
 	err = dao.CreateUser(&user)
 	if err != nil {
-		c.JSON(500, gin.H{
-			"code": 0,
-			"msg":  "注册失败",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "register failed",
 		})
 		return
 	}
-	c.JSON(200, gin.H{
-		"code": 1,
-		"msg":  "注册成功",
+	c.JSON(http.StatusOK, gin.H{
+		"statues": 200,
+		"message": "add user successful",
 	})
 }
 
@@ -64,10 +65,10 @@ func LogIn(c *gin.Context) {
 		return
 	}
 	if user.Username == "" || user.Password == "" {
-		c.JSON(500, gin.H{
-			"code":  0,
-			"msg":   "用户名或密码为空",
-			"token": "null",
+		c.JSON(http.StatusOK, gin.H{
+			"statues": 0,
+			"message": "username or password are empty",
+			"token":   "null",
 		})
 		return
 	}
@@ -76,9 +77,9 @@ func LogIn(c *gin.Context) {
 	if err != nil {
 		temp, err = dao.GetUserByUsername(user.Username)
 		if err != nil {
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"code": 0,
-				"msg":  "用户不存在",
+				"msg":  "user doesn't exit",
 			})
 			return
 		}
@@ -91,10 +92,10 @@ func LogIn(c *gin.Context) {
 		return
 	}
 	if password != user.Password {
-		c.JSON(500, gin.H{
-			"code":  0,
-			"msg":   "密码错误",
-			"token": "null",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "password wrong",
+			"token":   "null",
 		})
 		return
 	}
@@ -102,20 +103,25 @@ func LogIn(c *gin.Context) {
 	role := strconv.Itoa(temp.Role)
 	token, err := middleware.GenToken(user.Username, role)
 	if err != nil {
-		c.JSON(500, gin.H{
-			"code":  0,
-			"msg":   "无法生成token",
-			"token": "null",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "not token",
+			"token":   "null",
 		})
 		return
 	}
 	c.JSON(200, gin.H{
-		"code":  1,
-		"msg":   "登录成功",
-		"token": token,
+		"statues": 200,
+		"message": "login successful",
+		"token":   token,
+	})
+	//正确登录成功，设置cookie
+	c.SetCookie("gin_demo_cookie", "test", 3600, "/", "localhost", false, true)
+	c.JSON(http.StatusOK, gin.H{
+		"status":  200,
+		"message": "login successful",
 	})
 }
-
 func Forget(c *gin.Context) {
 	newPass := c.PostForm("newpassword")
 	var user model.UserInfo
@@ -124,16 +130,16 @@ func Forget(c *gin.Context) {
 		global.Logger.Warn("shouldBind failed:" + err.Error())
 	}
 	if user.Username == "" {
-		c.JSON(500, gin.H{
-			"code": 0,
-			"msg":  "用户名或密码为空",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  500,
+			"message": "username or password are empty",
 		})
 		return
 	}
 	if len(user.Phone) != 11 {
-		c.JSON(500, gin.H{
-			"code": 0,
-			"msg":  "手机号不合法",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  500,
+			"message": "numbers are failed",
 		})
 		return
 	}
@@ -142,15 +148,15 @@ func Forget(c *gin.Context) {
 		usr, err = dao.GetUserByUsername(user.Username)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				c.JSON(500, gin.H{
-					"code": 0,
-					"msg":  "用户不存在",
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"statues": 500,
+					"message": "user doesn't exist",
 				})
 				return
 			}
-			c.JSON(500, gin.H{
-				"code": 0,
-				"msg":  "查找用户出错",
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statues": 500,
+				"message": "search user is failed",
 			})
 			return
 		}
@@ -163,9 +169,9 @@ func Forget(c *gin.Context) {
 		return
 	}
 	if phone != usr.Phone {
-		c.JSON(500, gin.H{
-			"code": 0,
-			"msg":  "验证失败",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "verification failed",
 		})
 		return
 	}
@@ -182,23 +188,23 @@ func Forget(c *gin.Context) {
 	}
 	err = dao.UpdateUser(temp)
 	if err != nil {
-		c.JSON(500, gin.H{
-			"code": 0,
-			"msg":  "修改失败",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "fix is failed",
 		})
 		return
 	}
-	c.JSON(200, gin.H{
-		"code": 1,
-		"msg":  "修改成功",
+	c.JSON(http.StatusOK, gin.H{
+		"statues": 200,
+		"message": "modification successful",
 	})
 }
 
 func LogOut(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"code": 1,
-		"msg":  "clear jwt-token",
-		"user": c.GetString("username"),
+	c.JSON(http.StatusOK, gin.H{
+		"statues": 200,
+		"message": "clear jwt-token",
+		"user":    c.GetString("username"),
 	})
 }
 
@@ -209,9 +215,9 @@ func GetInfo(c *gin.Context) {
 	if err != nil {
 		user, err = dao.GetUserByUsername(username)
 		if err != nil {
-			c.JSON(500, gin.H{
-				"code": 0,
-				"msg":  "获取用户信息失败",
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statues": 500,
+				"message": "failed to retrieve user information",
 			})
 			return
 		}
@@ -221,21 +227,21 @@ func GetInfo(c *gin.Context) {
 	if err != nil {
 		wallet, err = dao.SelectWallet(username)
 		if err != nil {
-			c.JSON(500, gin.H{
-				"code": 0,
-				"msg":  "查询钱包失败",
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statues": 500,
+				"message": "failed to query the wallet",
 			})
 			return
 		}
 		_ = dao.SetWallet(c, wallet)
 	}
-	role := "顾客"
+	role := "customer"
 	if user.Role != 0 {
-		role = "店铺"
+		role = "store"
 	}
-	c.JSON(200, gin.H{
-		"code": 1,
-		"msg": gin.H{
+	c.JSON(http.StatusOK, gin.H{
+		"statues": 200,
+		"message": gin.H{
 			"Uid":      user.Uid,
 			"Role":     role,
 			"Username": user.Username,
@@ -254,15 +260,15 @@ func ChangeInfo(c *gin.Context) {
 		usr, err = dao.GetUserByUsername(username)
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				c.JSON(500, gin.H{
-					"code": 0,
-					"msg":  "用户不存在",
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"statues": 500,
+					"message": "user not found",
 				})
 				return
 			}
-			c.JSON(500, gin.H{
-				"code": 0,
-				"msg":  "查找用户出错",
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statues": 500,
+				"message": "failed to find user",
 			})
 			return
 		}
@@ -277,14 +283,14 @@ func ChangeInfo(c *gin.Context) {
 	}
 	err = dao.UpdateUser(temp)
 	if err != nil {
-		c.JSON(200, gin.H{
-			"code": 0,
-			"msg":  "更改用户个人信息失败",
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statues": 500,
+			"message": "failed to update user personal information",
 		})
 		return
 	}
-	c.JSON(200, gin.H{
-		"code": 1,
-		"msg":  "更改用户个人信息成功",
+	c.JSON(http.StatusOK, gin.H{
+		"statues": 200,
+		"message": "user's personal information updated successfully",
 	})
 }

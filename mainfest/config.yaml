@@ -1,0 +1,16 @@
+host: ""
+port: ""
+mysql_info:
+  user: ""
+  password: ""
+  port: ""
+  db_name: ""
+redis_info:
+  addr: ""
+  password: ""
+zap_info:
+  path: ""
+crypt_info:
+  key: ""
+  iv: ""
+token_secret: ""

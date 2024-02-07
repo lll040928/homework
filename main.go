@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-	common.SetupViper()
-	common.InitDatabase()
 	router.InitRouter()
+	common.InitDatabase()
 }

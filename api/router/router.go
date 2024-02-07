@@ -11,7 +11,7 @@ func InitRouter() {
 	r := gin.Default()
 
 	r.POST("/register", service.Register)
-	r.POST("/login", service.LogIn)
+	r.POST("/login", service.Login)
 	r.POST("/logOut", service.LogOut)
 	r.POST("/forget", service.Forget)
 	s := r.Group("/store")
